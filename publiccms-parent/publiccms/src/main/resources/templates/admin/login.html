@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="<@t.page 'html_lang'/>">
+<head>
+    <meta charset="UTF-8">
+    <title>${site.name} - <@t.page 'management_system'/> - <@t.page 'login_page'/></title>
+    <link rel="stylesheet" href="${base}/resource/login/login.css?1">
+</head>
+<body>
+<div class="login_body">
+    <div class="login_body_left"><img src="<#if siteAttribute.square_logo?has_content>${getAbsoluteUrl(site.sitePath,siteAttribute.square_logo)}<#else>${base}/resource/square_logo.png</#if>"/></div>
+    <div class="login_form clearfix">
+        <form action="${base+adminContextPath}/login" method="post" onsubmit="encode()">
+            <p class="logo">
+                <#if domain.multiple>
+                    <select onchange="change(this)">
+                        <@_sysSite id=domain.siteId><option value="${object.id}"<#if object.id==site.id> selected="true"</#if>>${object.name}</option></@_sysSite>
+                        <@_sysSiteList parentId=domain.siteId pageSize=100>
+                        <optgroup label="<@t.page 'site.child_management'/>">
+                            <#list page.list as a>
+                        <option value="${a.id}"<#if a.id==site.id> selected="true"</#if>>${a.name}</option>
+                            </#list>
+                        </optgroup>
+                        </@_sysSiteList>
+                    </select>
+                <#else>
+                    ${site.name}
+                </#if>
+            </p>
+            <p>
+                <i class="iconfont iconfont-user"></i>
+                <input type="text" name="username" placeholder="<@t.page 'user.username'/>" title="<@t.page 'user.username'/>" value="${(user.name)!}"/>
+            </p>
+            <p>
+                <i class="iconfont iconfont-key"></i>
+                <input type="password" name="password" placeholder="<@t.page 'password'/>" title="<@t.page 'password'/>"/>
+            </p>
+            <p>
+                <label><input type="checkbox" name="secureLogin" checked="checked"/><@t.page 'secure_login'/></label>
+                <input type="submit" value="<@t.page 'login'/>"/>
+                <input type="hidden" name="returnUrl" value="${(returnUrl!)}"/>
+                <input type="hidden" name="encoding"/>
+            </p>
+            <p class="error_msg">
+                <#if error?has_content>
+                    <@t.message error/>
+                </#if>
+                <#if message?has_content>
+                    <@t.message "message."+message/>
+                </#if>
+            </p>
+        </form>
+        <p>
+            <#list langs as k,v>
+                <a<#if springMacroRequestContext.getMessage('page.lang')=k> class="current-lang"</#if> href="${base+adminContextPath}/changeLocale?lang=${k}&returnUrl=${(adminContextPath+'/')?url}">${v}</a>
+            </#list>
+        </p>
+    </div>
+</div>
+<script src="${base}/resource/js/sha512.min.js"></script>
+<script>
+if(document.getElementsByTagName('input')[0].value){
+    document.getElementsByTagName('input')[1].focus();
+}else{
+    document.getElementsByTagName('input')[0].focus();
+}
+function encode(){
+    if(document.getElementsByName('secureLogin')[0].checked){
+        document.getElementsByName('password')[0].value = sha512(document.getElementsByName('password')[0].value);
+        document.getElementsByName('encoding')[0].value = 'sha512';
+    }
+}
+function change(obj){
+    location.href=location.href+(0<location.href.indexOf('?')?'&':'?')+'currentSiteId='+obj.options[obj.options.selectedIndex].value;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<@_webFileContent path=path><#assign content=object!/></@_webFileContent>
+<#assign
+    editorType={'css':'css','js':'javascript','xml':'xml'}
+    fileType=path?keep_after_last('.')?lower_case
+/>
+<form method="post" autocomplete="off" action="cmsWebFile/save<#if !content?has_content>?callbackType=closeCurrent&navTabId=cmsWebFile/list</#if>" class="pageForm required-validate" onsubmit="return validateCallback(this, navTabAjaxDone);">
+    <input type="hidden" name="_csrf" value="<@_csrfToken admin=true/>"/>
+    <div class="formBar">
+        <ul>
+            <li><a class="button" href="cmsWebFile/delete?paths=${(path?url)!}&callbackType=closeCurrent&navTabId=cmsWebFile/list&_csrf=<@_csrfToken admin=true/>" title="<@t.page 'confirm.delete_file'/>" target="ajaxTodo"><i class="icon-trash icon-large"></i> <@t.page 'button.delete'/></a></li>
+            <@_createLock itemType='file' itemId=path userId=admin.id>
+                <#if object?has_content||!path?has_content>
+            <li><button type="submit" class="buttonActive" title="ctrl+s"<#if path?has_content> close-url="common/unlock?itemType=file&itemId=${(path?url)!}"</#if>><@t.page 'button.save'/></button></li>
+                <#else>
+            <li>
+                <@_sysLock userId=admin.id itemType='file' itemId=path>
+                    <@_sysUser id=(object.userId)!''><#assign lockUser=object.nickName/></@_sysUser>
+                <button type="button" class="buttonDisabled" title="${object.createDate}"><@t.page 'lock.message' lockUser/></button>
+                </@_sysLock>
+            </li>
+                </#if>
+            </@_createLock>
+        </ul>
+    </div>
+    <h2 class="contentTitle">
+        <a class="button" href="cmsWebFile/lookup.html?fullPath=true" target="dialog" mask="true"><@t.page 'webfile'/></a>
+    </h2>
+    <div class="pageFormContent" layoutH>
+        <div class="clearfix">
+            <label><@t.page 'path'/>:</label>
+            <input name="path" class="required" type="text" maxlength="500" size="50" value="${(path)!}<#if !content?has_content>/filename.html</#if>"/>
+        </div>
+        <div>
+            <textarea name="content" class="code" escape="true" mode="${editorType[fileType]?has_content?then(editorType[fileType],'htmlmixed')}">${content!}</textarea>
+        </div>
+    </div>
+</form>

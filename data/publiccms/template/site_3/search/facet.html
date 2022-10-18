@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<title>高级搜索 - PublicCMS</title>
+	<meta name="keywords" content="高级搜索,分面搜索,智能搜索"/>
+	<meta name="description" content="高级搜索  ${word!}"/>
+	<@_includePlace path="/76c53ac2-4f88-4ef3-984b-c81d00a48089.html"/> <#-- 头部Header -->
+</head>
+<body>
+<@_includePlace path="/23e95a91-0063-4498-99ef-aa3fc4a79c4c.html"/> <#-- 导航 -->
+<main>
+	<div class="container bread">
+		<a href="${site.sitePath!}">首页</a>  &gt; <a href="${siteAttribute.searchPath!}">搜索</a>
+	</div>
+	<div class="container clearfix-after">
+		<div class="data-list left-content">
+			<div class="search">
+				<form action="facet.html" method="get">
+					<div class="search-box">
+						<input type="text" name="word" value="${word!}"/>					
+						<input type="submit" class="button" value="搜索"/>
+					</div>
+					<#if categoryId?has_content><input type="hidden" name="categoryId" value="${categoryId!}"/></#if>
+					<#if modelId?has_content><input type="hidden" name="modelId" value="${modelId!}"/></#if>
+				<#if dictionaryValues?has_content>
+					<#list dictionaryValues as d>
+						<input type="hidden" name="dictionaryValues" value="${d}"/>
+					</#list>
+				</#if>
+				<#if tagId?has_content>
+					<#list tagId as t>
+						<input type="hidden" name="tagId" value="${t}"/>
+					</#list>
+				</#if>
+				</form>
+				<@_tagList count=10>
+					<p>
+						热门标签：
+						<#list page.list as a>
+							<a href="?tagId=${a.id}">${a.name}</a>
+						</#list>
+					</p>
+				</@_tagList>
+				<@_wordList count=10>
+					<p>
+						热门搜索词：
+						<#list page.list as a>
+							<a href="?word=${a.name?url}">${a.name}</a>
+						</#list>
+					</p>
+				</@_wordList>
+			</div>
+		<@import path="/ftl/tools.ftl" namespace="t"/>
+		<@_facetSearch word=word tagId=tagId categoryId=categoryId dictionaryValues=dictionaryValues modelId=modelId highlight=true pageIndex=pageIndex pageSize=10>
+			<#if (page.facetMap.categoryId)?has_content||categoryId?has_content>
+				<div class="search-condition">
+					<label>分类:</label>
+						<#if categoryId?has_content>
+							<@_category id=categoryId><#assign firstCategory=object/>${object.name} <a href="javascript:search('categoryId','');">X</a></@_category>
+						<#else>
+							<#list page.facetMap.categoryId?keys as k><@t.merge 'categoryIds' k/></#list>
+							<@_category ids=(t.categoryIds)!><#assign categoryMap=map!/></@_category>
+							<#list page.facetMap.categoryId?keys as k>
+								<#if k?is_first><#assign firstCategory=categoryMap[k]/></#if>
+							<a href="javascript:search('categoryId','${k}');" ${(k=categoryId!'')?then('style="font-weight:bold;"','')?no_esc}>${categoryMap[k].name}(${page.facetMap.categoryId[k]})</a>
+							</#list>
+						</#if>
+				</div>
+			</#if>
+			<#if (page.facetMap.modelId)?has_content||modelId?has_content>			
+				<div class="search-condition">
+					<label>模型:</label>											
+					<#if modelId?has_content>
+						<@_model id=modelId><#assign firstModel=object/>${object.name} <a href="javascript:search('modelId','');">X</a></@_model>
+					<#else>
+						<#list page.facetMap.modelId?keys as k><@t.merge 'sidemodelIds' k/></#list>
+						<@_model ids=(t.sidemodelIds)!><#assign modelMap=map!/></@_model>	
+						<#list page.facetMap.modelId?keys as k>
+							<#if k?is_first><#assign firstModel=modelMap[k]/></#if>
+							<a href="javascript:search('modelId','${k}');">${modelMap[k].name}(${page.facetMap.modelId[k]})</a>
+						</#list>
+					</#if>						
+				</div>
+			</#if>
+	<@_tag ids=tagId>
+		<#if map?has_content>
+			<div class="search-condition">
+				<label>标签:</label>
+				<#list map?keys as k>${map[k].name} <a href="javascript:search('tagId','');">X</a></#list>
+			</div>
+		</#if>
+	</@_tag>
+		<#macro dictionarySearch extendList>
+			<#list extendList as extend>
+				<div class="search-condition">
+						<@_dictionary id=extend.dictionaryId>
+					<label>${object.name}:</label>
+						<a href="javascript:search('dictionaryValues','');" ${(!dictionaryValues?has_content)?then('style="font-weight:bold;"','')?no_esc}>全部</a>
+						<@_dictionaryDataList dictionaryId=object.id.id>
+							<#list list as d>
+						<a href="javascript:search('dictionaryValues','${extend.id.code}_${d.id.value!}');" ${(dictionaryValues?has_content && dictionaryValues?seq_contains(extend.id.code+'_'+d.id.value))?then('style="font-weight:bold;"','')?no_esc}>${d.text}</a>
+							</#list>
+						</@_dictionaryDataList>
+					</@_dictionary>
+				</div>
+			</#list>
+		</#macro>
+		<#if (firstCategory.extendId)?has_content>
+			<@_sysExtendFieldList extendId=firstCategory.extendId inputType='dictionary' searchable=true>
+				<@dictionarySearch list/>
+			</@_sysExtendFieldList>
+		</#if>
+		<#if (firstModel.extendList)?has_content>
+			<@dictionarySearch firstModel.extendList/>
+		</#if>
+		<#if page.totalCount gt 0>
+			<ul>
+			<#list page.list as a>
+					<@include path="/ftl/search-list.ftl"/><#-- 搜索列表 -->
+			</#list>
+			</ul>
+			<div class="page">
+				<#if !page.firstPage>
+				<a href="javascript:search('pageIndex',${page.prePage});">上一页</a>
+				<#else>
+				<span>上一页</span>
+				</#if>
+				<#assign start=1/>
+				<#if (page.pageIndex-5) gt start>
+				<#assign start=page.pageIndex-4/>
+				</#if>
+				<#assign end=page.totalPage/>
+				<#if (page.pageIndex+5) lt end>
+				<#assign end=page.pageIndex+4/>
+				</#if>
+				<#if start gt 1>
+				<a href="javascript:search('pageIndex',1);">1</a> ...
+				</#if>
+				<#list start..end as n><a href="javascript:search('pageIndex',${n});"<#if n=page.pageIndex> class="selected"</#if>>${n}</a></#list>
+				<#if end lt page.totalPage>
+				... <a href="javascript:search('pageIndex',${page.totalPage});">${page.totalPage}</a>
+				</#if>
+				<#if !page.lastPage>
+				<a href="javascript:search('pageIndex',${page.nextPage});">下一页</a>
+				<#else>
+				<span>下一页</span>
+				</#if>
+			</div>
+		</#if>
+	</@_facetSearch>
+		</div>
+		<aside>
+			<@_includePlace path="/49d393ca-f0f1-4723-a9b0-6f9b6d7cc04d.html"/> <#-- 编辑推荐 -->
+			<@_includePlace path="/3435e9a7-565a-4f93-8670-9c272a1d51cc.html"/> <#-- 精彩图集 -->
+		</aside>
+	</div>
+</main>
+<@_includePlace path="/cc29e896-332a-46d8-9bcb-d48e92144e9c.html"/> <#-- 尾部Footer -->
+	<script>
+		function search(name,value){
+			var $form = $('.search form');
+			var $input = $form.find('input[name='+name+']');
+			if(0 == $input.length && value){
+				$input = $('<input type="hidden"/>').attr('name',name).appendTo($form);						
+			}
+			if(value){
+				$input.val(value);
+			}else{
+				$input.remove();
+			}
+			$form.submit();
+			return false;
+		}
+	</script>
+</body>
+</html>
